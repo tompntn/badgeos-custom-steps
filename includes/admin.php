@@ -1,6 +1,6 @@
 <?php
 /**
- * Integrates the new step type in wp admin
+ * Integrates the new step type in the wordpress admin
  *
  * @package BadgeOS Custom JS Steps
  */
@@ -49,10 +49,8 @@
 
  add_filter( 'badgeos_activity_triggers', 'badgeos_custom_js_steps_activity_triggers' );
 
-
-
  /**
-  * UI to specify what function call to be listening for.
+  * UI to specify what event listener will trigger the step
   *
   * @since 0.0.1
   *
@@ -61,25 +59,57 @@
   */
  function badgeos_custom_js_steps_etc_trigger_select( $step_id, $post_id ) {
 
-   $current_trigger = get_post_meta( $step_id, '_badgeos_custom_js_steps_trigger', true );
-	 $current_object_id = (int) get_post_meta( $step_id, '_badgeos_custom_js_steps_object_id', true );
-	 $current_object_arg1 = (int) get_post_meta( $step_id, '_badgeos_custom_js_steps_object_arg1', true );
+	 $current_event_listener_slug = get_post_meta( $step_id, '_badgeos_custom_js_steps_event_listener_slug', true );
 
-   ($current_trigger == 'badgeos-custom-js-steps') ? $function_name_placeholder = (string) $current_object_arg1 : $function_name_placeholder = "";
-
-   echo '<span class="badgeos_custom_js_steps_function_name">Function: '.
-   '<input name="badgeos_custom_js_steps_function_name" type="text" value="' . $function_name_placeholder . '" placeholder="my_func_name" /></span>';
+   echo '<span class="badgeos_custom_js_steps_event_listener_slug"><br>Event Listener: '.
+   '<input name="badgeos_custom_js_steps_event_listener_slug" type="text" value="' . $current_event_listener_slug . '" placeholder="my_event_listener" /><br></span>';
 
  }
 
  add_action( 'badgeos_steps_ui_html_after_trigger_type', 'badgeos_custom_js_steps_etc_trigger_select', 10, 2 );
 
  /**
+  * Filter the AJAX Handler for saving all steps to accomodate our new one
+  *
+  * @since  0.0.1
+  *
+  * @param  string  $title     The original title for our step.
+  * @param  integer $step_id   The given step's post ID.
+  * @param  array   $step_data Our array of all available step data.
+  *
+  * @return string             Our potentially updated step title.
+  */
+ function badgeos_custom_js_steps_save_step( $title, $step_id, $step_data ) {
+
+ 	// Exit if we are not working on the trigger we added
+  if ( $step_data[ 'trigger_type' ] != 'custom_js_steps_trigger' ) {
+    return $title;
+  }
+
+  foreach ($step_data as $key => $value) {
+    update_post_meta( $step_id, '_badgeos_custom_js_steps_FIELD:'.$key, $value );
+  }
+
+  // Storing the data the user entered
+  $event_listener_slug = (string) $step_data[ 'custom_js_steps_event_listener_slug' ];
+  update_post_meta( $step_id, '_badgeos_custom_js_steps_event_listener_slug', $event_listener_slug );
+
+  // Re-writing the title
+  $title = sprintf( __( 'The event listener %s was triggered.', 'badgeos-custom-js-steps' ), $event_listener_slug );
+
+ 	// Send back our custom title
+ 	return $title;
+
+ }
+
+ add_filter( 'badgeos_save_step', 'badgeos_custom_js_steps_save_step', 10, 3 );
+
+ /**
   * Enqueue our script for tidying up the modified admin menu
   *
   * @since 0.0.1
   */
- function badgeos_custom_js_steps_enqueue_js( ) {
+ function badgeos_custom_js_steps_enqueue_js() {
 
    // Registered this script earlier (in plugin init file)
    wp_enqueue_script('badgeos-custom-js-steps-admin');
@@ -87,6 +117,3 @@
  }
 
  add_action( 'admin_footer', 'badgeos_custom_js_steps_enqueue_js', 10, 2 );
-
-// TODO: Filter AJAX handler for saving all steps to save our custom steps
-// TODO: Inject JS code so we can add our extra options to the UI
