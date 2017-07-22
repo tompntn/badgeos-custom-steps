@@ -1,9 +1,11 @@
 <?php
 /**
  * Plugin Name: BadgeOS Custom JS Steps
- * Description: This BadgeOS add-on gives "Required Steps" the ability to listen for a JS function call.
+ * Description: This BadgeOS add-on gives "Required Steps" the ability to act like a JS Event Listener.
  * Author: Teepee Studios
  * Version: 0.0.1
+ * Tags: badgeos
+ * Textdomain: badgeos-custom-js-steps
  * Author URI: http://www.teepeestudios.com/
  */
 
@@ -37,7 +39,7 @@ class badgeos_custom_js_steps {
 		// Include the other plugin files
 		add_action( 'init', array( $this, 'includes' ) );
 
-	} /* __construct() */
+	}
 
 
 	/**
@@ -53,9 +55,15 @@ class badgeos_custom_js_steps {
 			// Set up the trigger(s)
 			require_once( $this->directory_path . '/includes/trigger.php' );
 
+			// Integrate into the backend admin interface
+			require_once( $this->directory_path . '/includes/admin.php' );
+
+			// Register the script needed
+			wp_register_script( 'badgeos-custom-js-steps-admin', $this->directory_url . '/js/admin.js', array( 'jquery' ), '1.0.0', true );
+
 		}
 
-	} /* includes() */
+	}
 
 	/**
 	 * Check if BadgeOS is available
@@ -70,7 +78,7 @@ class badgeos_custom_js_steps {
 		else
 			return false;
 
-	} /* meets_requirements() */
+	}
 
 	/**
 	 * Potentially output a custom error message and deactivate
@@ -92,9 +100,9 @@ class badgeos_custom_js_steps {
 			deactivate_plugins( $this->basename );
 		}
 
-	} /* maybe_disable_plugin() */
+	}
 
-} /* badgeos_custom_js_steps */
+}
 
 // Instantiate the class to a global variable that we can access elsewhere
 $GLOBALS['badgeos_custom_js_steps'] = new badgeos_custom_js_steps();
